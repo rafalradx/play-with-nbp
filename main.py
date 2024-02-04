@@ -8,6 +8,7 @@ from datetime import date, timedelta
 
 def prepare_day_list(daysback):
     today = date.today()
+    # today = date(year=2024, month=2, day=1)  # testing
     if daysback > 10:
         print("Currency exchange-rate check limited to 10 days back")
         daysback = 10
@@ -15,14 +16,22 @@ def prepare_day_list(daysback):
 
 
 async def get_page(day, session):
-    async with session.get(
-        f"https://api.nbp.pl/api/exchangerates/tables/a/{day}?format=json"
-    ) as response:
-        print("Status:", response.status)
-        print("Content-type:", response.headers["content-type"])
-
-        html = await response.text()
-        return f"Body: {html[:150]}..."
+    try:
+        async with session.get(
+            f"https://api.nbp.pl/api/exchangerates/tables/c/{day}?format=json"
+        ) as response:
+            print("Status:", response.status)
+            if response.status == 200:
+                response_json = await response.json()
+                return response_json
+                # return json.dumps(response_json, indent=4)
+            else:
+                return json.dumps({day: "No exchange rates for this day"})
+    except aiohttp.ClientConnectorError as err:
+        print(
+            f"Connection error when asking nbp API for currency rates from {day}",
+            str(err),
+        )
 
 
 async def main():
@@ -41,15 +50,7 @@ async def main():
 
     async with aiohttp.ClientSession() as session:
         result = await asyncio.gather(*[get_page(day, session) for day in days])
-        #     get_page(days[0], session),
-        #     get_page(days[1], session),
-        #     get_page(days[2], session),
-        # )
-        # result = await asyncio.gather(
-        #     get_page(days[0], session),
-        #     get_page(days[1], session),
-        #     get_page(days[2], session),
-        # )
+
         return result
 
 
@@ -58,5 +59,5 @@ if __name__ == "__main__":
     if platform.system() == "Windows":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     r = asyncio.run(main())
-    print(r)
+    print(*r)
     # print(json.dumps(r, indent=4))
