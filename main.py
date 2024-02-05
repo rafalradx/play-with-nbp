@@ -65,7 +65,12 @@ if __name__ == "__main__":
     for result in results:
         merged_results.update(result)
 
-    currency_codes = ["EUR", "USD", "CHF"]
+    currency_codes = {"EUR", "USD"}
+    if len(sys.argv) > 2:
+        additional_codes = {code.upper() for code in sys.argv[2:]}
+        currency_codes.update(additional_codes)
+
+    print(currency_codes)
 
     exchange_rates = []
     for day, rate_data in merged_results.items():
@@ -75,15 +80,10 @@ if __name__ == "__main__":
             selected_currencies = list(
                 filter(lambda x: x["code"] in currency_codes, rate_data["rates"])
             )
-            tochce = {
+            reformated = {
                 curr["code"]: {"sale": curr["ask"], "purchase": curr["bid"]}
                 for curr in selected_currencies
             }
+            exchange_rates.append({day: reformated})
 
-            exchange_rates.append({day: tochce})
-
-    print(type(results))
-    print([type(n) for n in results])
-    print(*results)
     print(json.dumps(exchange_rates, indent=4))
-    # print(json.dumps(r, indent=4))
