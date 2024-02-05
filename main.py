@@ -20,7 +20,6 @@ async def get_currency_exchange_rate(day, session):
         async with session.get(
             f"https://api.nbp.pl/api/exchangerates/tables/c/{day}?format=json"
         ) as response:
-            print("Status:", response.status)
             if response.status == 200:
                 data = await response.json()  # API returns list
                 return {day: data[0]}
@@ -39,8 +38,6 @@ async def main():
         try:
             daysback = int(sys.argv[1])
             days = prepare_day_list(daysback)
-            print(days)
-
         except ValueError as err:
             print(str(err), "\nArgument should be (int)")
             return -1
@@ -69,8 +66,6 @@ if __name__ == "__main__":
     if len(sys.argv) > 2:
         additional_codes = {code.upper() for code in sys.argv[2:]}
         currency_codes.update(additional_codes)
-
-    print(currency_codes)
 
     exchange_rates = []
     for day, rate_data in merged_results.items():
