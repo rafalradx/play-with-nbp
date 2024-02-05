@@ -15,18 +15,17 @@ def prepare_day_list(daysback):
     return [str(today - timedelta(days=n)) for n in range(daysback + 1)]
 
 
-async def get_page(day, session):
+async def get_currency_exchange_rate(day, session):
     try:
         async with session.get(
             f"https://api.nbp.pl/api/exchangerates/tables/c/{day}?format=json"
         ) as response:
             print("Status:", response.status)
             if response.status == 200:
-                response_json = await response.json()
-                return response_json
-                # return json.dumps(response_json, indent=4)
+                data = await response.json()  # API returns list
+                return {day: data[0]}
             else:
-                return json.dumps({day: "No exchange rates for this day"})
+                return {day: None}
     except aiohttp.ClientConnectorError as err:
         print(
             f"Connection error when asking nbp API for currency rates from {day}",
@@ -49,7 +48,9 @@ async def main():
         days = prepare_day_list(0)
 
     async with aiohttp.ClientSession() as session:
-        result = await asyncio.gather(*[get_page(day, session) for day in days])
+        result = await asyncio.gather(
+            *[get_currency_exchange_rate(day, session) for day in days]
+        )
 
         return result
 
@@ -58,6 +59,31 @@ if __name__ == "__main__":
 
     if platform.system() == "Windows":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-    r = asyncio.run(main())
-    print(*r)
+    results = asyncio.run(main())
+
+    merged_results = {}
+    for result in results:
+        merged_results.update(result)
+
+    currency_codes = ["EUR", "USD", "CHF"]
+
+    exchange_rates = []
+    for day, rate_data in merged_results.items():
+        if rate_data is None:
+            exchange_rates.append({day: "No exchange rates available"})
+        else:
+            selected_currencies = list(
+                filter(lambda x: x["code"] in currency_codes, rate_data["rates"])
+            )
+            tochce = {
+                curr["code"]: {"sale": curr["ask"], "purchase": curr["bid"]}
+                for curr in selected_currencies
+            }
+
+            exchange_rates.append({day: tochce})
+
+    print(type(results))
+    print([type(n) for n in results])
+    print(*results)
+    print(json.dumps(exchange_rates, indent=4))
     # print(json.dumps(r, indent=4))
