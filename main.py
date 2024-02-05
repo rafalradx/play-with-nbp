@@ -8,7 +8,6 @@ from datetime import date, timedelta
 
 def prepare_day_list(daysback):
     today = date.today()
-    # today = date(year=2024, month=2, day=1)  # testing
     if daysback > 10:
         print("Currency exchange-rate check limited to 10 days back")
         daysback = 10
@@ -21,7 +20,7 @@ async def get_currency_exchange_rate(day, session):
             f"https://api.nbp.pl/api/exchangerates/tables/c/{day}?format=json"
         ) as response:
             if response.status == 200:
-                data = await response.json()  # API returns list
+                data = await response.json()  # NBP API returns list
                 return {day: data[0]}
             else:
                 return {day: None}
