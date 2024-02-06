@@ -104,7 +104,7 @@ if __name__ == "__main__":
         currency_codes.update(additional_codes)
 
     NBPRetriever = NBPCurrencyRateRetriever(
-        startDate, endDate, currency_codes=currency_codes
+        startDate=startDate, endDate=endDate, currency_codes=currency_codes
     )
 
     output = NBPRetriever.run()
