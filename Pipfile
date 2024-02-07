@@ -5,6 +5,8 @@ name = "pypi"
 
 [packages]
 aiohttp = "3.9"
+names = "*"
+websockets = "*"
 
 [dev-packages]
 

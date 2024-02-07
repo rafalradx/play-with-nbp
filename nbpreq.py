@@ -75,33 +75,43 @@ class NBPCurrencyRateRetriever:
                 exchange_rates.append({day: reformated})
         return json.dumps(exchange_rates, indent=4)
 
+    @staticmethod
+    def prepare_dates(daysback):
+        today = date.today()
+        endDate = str(today)
+        if daysback > 10:
+            print("Currency exchange-rate check limited to 10 days back")
+            daysback = 10
+        startDate = str(today - timedelta(days=daysback))
+        return startDate, endDate
 
-def prepare_dates(daysback):
-    today = date.today()
-    endDate = str(today)
-    if daysback > 10:
-        print("Currency exchange-rate check limited to 10 days back")
-        daysback = 10
-    startDate = str(today - timedelta(days=daysback))
-    return startDate, endDate
+    @staticmethod
+    def prepare_codes(codes: list[str] = None):
+        currency_codes = {"EUR", "USD"}
+        if codes is None:
+            return currency_codes
+        additional_codes = {code.upper() for code in codes}
+        currency_codes.update(additional_codes)
+        return currency_codes
 
 
 if __name__ == "__main__":
 
     if len(sys.argv) == 1:
-        startDate, endDate = prepare_dates(0)
-
-    if len(sys.argv) > 1:
+        daysback = 0
+    else:
         try:
             daysback = int(sys.argv[1])
-            startDate, endDate = prepare_dates(daysback)
         except ValueError as err:
             print(str(err), "\nArgument should be (int)")
+            exit()
 
-    currency_codes = {"EUR", "USD"}
+    startDate, endDate = NBPCurrencyRateRetriever.prepare_dates(daysback)
+
+    currency_codes = NBPCurrencyRateRetriever.prepare_codes()
+
     if len(sys.argv) > 2:
-        additional_codes = {code.upper() for code in sys.argv[2:]}
-        currency_codes.update(additional_codes)
+        currency_codes = NBPCurrencyRateRetriever.prepare_codes(sys.argv[2:])
 
     NBPRetriever = NBPCurrencyRateRetriever(
         startDate=startDate, endDate=endDate, currency_codes=currency_codes
