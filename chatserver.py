@@ -4,6 +4,7 @@ import websockets
 import names
 from websockets import WebSocketServerProtocol
 from websockets.exceptions import ConnectionClosedOK
+import nbpreq as nbp
 
 logging.basicConfig(level=logging.INFO)
 
@@ -35,7 +36,31 @@ class Server:
 
     async def distribute(self, ws: WebSocketServerProtocol):
         async for message in ws:
-            await self.send_to_clients(f"{ws.name}: {message}")
+            m_splitted = message.strip().lower().split()
+            if m_splitted[0] == "exchange":
+                if len(m_splitted) == 1:
+                    daysback = 0
+                else:
+                    try:
+                        daysback = int(m_splitted[1])
+                    except ValueError as err:
+                        response = "\nArgument for 'exchange' should be (int)"
+                startDate, endDate = nbp.NBPCurrencyRateRetriever.prepare_dates(
+                    daysback
+                )
+                currency_codes = nbp.NBPCurrencyRateRetriever.prepare_codes()
+                if len(m_splitted) > 2:
+                    currency_codes = nbp.NBPCurrencyRateRetriever.prepare_codes(
+                        m_splitted[2:]
+                    )
+                NBPRetriever = nbp.NBPCurrencyRateRetriever(
+                    startDate=startDate, endDate=endDate, currency_codes=currency_codes
+                )
+                results = await NBPRetriever.send_request_nbp()
+                response = NBPRetriever.pretty_output(results)
+                await self.send_to_clients(f"{' '.join(m_splitted)}: {response}")
+            else:
+                await self.send_to_clients(f"{ws.name}: {message}")
 
 
 async def main():
